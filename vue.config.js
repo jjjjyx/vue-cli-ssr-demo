@@ -14,6 +14,10 @@ const target = TARGET_NODE
     : 'client'
 
 module.exports = {
+    devServer: {
+        port: 8085, // 端口号
+        host: 'localhost'
+    },
     configureWebpack: () => ({
         entry: `./src/entry-${target}`,
         target: TARGET_NODE ? 'node' : 'web',

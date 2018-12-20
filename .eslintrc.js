@@ -24,5 +24,12 @@ module.exports = {
     ],
     parserOptions: {
         parser: 'babel-eslint'
+    },
+    'globals': {
+        '_': true,
+        '$': true,
+        'SITE': true,
+        'config': true,
+        'ISDEV': true
     }
 }

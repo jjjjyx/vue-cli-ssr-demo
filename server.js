@@ -1,13 +1,14 @@
 const fs = require('fs')
 const path = require('path')
 const express = require('express')
-var proxy = require('http-proxy-middleware')
+const unless = require('express-unless')
+const proxy = require('http-proxy-middleware')
 const { createBundleRenderer } = require('vue-server-renderer')
 
-const devServerBaseURL = process.env.DEV_SERVER_BASE_URL || 'http://localhost'
-const devServerPort = process.env.DEV_SERVER_PORT || 8081
-
 const app = express()
+const ISDEV = app.get('env') === 'development'
+global.ISDEV = ISDEV
+global.config = require('./config')
 
 function createRenderer (bundle, options) {
     return createBundleRenderer(bundle, Object.assign(options, {
@@ -26,32 +27,39 @@ renderer = createRenderer(bundle, {
     clientManifest
 })
 
-if (process.env.NODE_ENV !== 'production') {
+if (ISDEV) {
+    // const webpackDevConfig = require('@vue/cli-service/webpack.config')
+    // 这里不知道怎么获取端口号  const { host: devServerBaseURL = 'localhost', port: devServerPort = 8080 } = webpackDevConfig.devServer || {}
+    // 也不重要，如果更改了端口这里记得改
+    const devServerBaseURL = process.env.DEV_SERVER_BASE_URL || 'http://localhost'
+    const devServerPort = process.env.DEV_SERVER_PORT || 8080
+    const target = `${devServerBaseURL}:${devServerPort}`
     app.use('/js/main*', proxy({
-        target: `${devServerBaseURL}:${devServerPort}`,
+        target,
         changeOrigin: true,
         pathRewrite: function (path) {
-            return path.includes('main')
-                ? '/main.js'
-                : path
+            return path.includes('main') ? '/main.js' : path
         },
         prependPath: false
     }))
 
     app.use('/*hot-update*', proxy({
-        target: `${devServerBaseURL}:${devServerPort}`,
+        target,
         changeOrigin: true
     }))
 
     app.use('/sockjs-node', proxy({
-        target: `${devServerBaseURL}:${devServerPort}`,
+        target,
         changeOrigin: true,
         ws: true
     }))
+} else {
+    let staticDir = express.static(path.join(__dirname, './dist'), {
+        maxAge: '30d'
+    })
+    staticDir.unless = unless
+    app.use(staticDir.unless({ method: 'OPTIONS' }))
 }
-
-app.use('/js', express.static(path.resolve(__dirname, './dist/js')))
-app.use('/css', express.static(path.resolve(__dirname, './dist/css')))
 
 app.get('*', (req, res) => {
     res.setHeader('Content-Type', 'text/html')

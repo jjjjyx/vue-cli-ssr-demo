@@ -1,0 +1,31 @@
+{
+    "appenders": {
+        "access": {
+            "type": "dateFile",
+            "filename": "log/http-access.log",
+            "pattern": ".yyyy-MM-dd",
+            "compress": true
+        },
+        "out": {
+            "type": "stdout"
+        },
+        "app": {
+            "type": "file",
+            "filename": "log/application.log",
+            "maxLogSize": 2097152,
+            "numBackups": 3,
+            "level": "debug"
+        }
+    },
+    "categories": {
+        "default": {
+            "appenders": [
+                "out",
+                "app"
+            ],
+            "level": "trace"
+        }
+    },
+    "pm2": true,
+    "pm2InstanceVar": "INSTANCE_ID"
+}
